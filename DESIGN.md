@@ -1,6 +1,6 @@
 # sqlgate: design
 
-Status: draft v1, 2026-11-01. Working name, free on PyPI on this date. Milestones 1 (comparison and verdicts), 2 (safe executor and preflight), 3 (privacy checks), 4 (providers, record and replay) and 5 (bookshop demo, with a basic CLI) are built and tested on PostgreSQL 16 and 17.
+Status: draft v1, 2026-11-01. Working name, free on PyPI on this date. Milestones 1 (comparison and verdicts), 2 (safe executor and preflight), 3 (privacy checks), 4 (providers, record and replay), 5 (bookshop demo, with a basic CLI) and 6 (gates, baseline, statistics, reports) are built and tested on PostgreSQL 16 and 17.
 
 **One line:** a CI gate for text-to-SQL features. It runs your system against your own PostgreSQL schema and fails the build if accuracy regresses or a query breaks a safety rule.
 
@@ -177,6 +177,11 @@ Truncated results are never confirmed as correct. Dates and timestamps are diffe
 | A refusal case answered | Fails |
 | Accuracy | Must not drop below `baseline - allowed_drop` (default 0) |
 | Newly failing case | Listed, and fails with `--strict` |
+| Provider error | Fails, because an outage must not look like a pass |
+| Case removed since the baseline | Warning, and fails with `--strict`. Accuracy only counts cases in both runs |
+| Unknown lineage | Warning, and fails with `--strict` |
+
+Without a baseline, accuracy is reported but not gated.
 
 Exit codes: `0` pass, `1` gate failed, `2` configuration or preflight error.
 
