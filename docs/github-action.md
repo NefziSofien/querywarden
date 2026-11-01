@@ -2,6 +2,8 @@
 
 The action runs `querywarden run`, writes the report to the job summary, and fails the job when a gate fails. It can also keep one PR comment up to date.
 
+To see it block a pull request, look at [this example](https://github.com/NefziSofien/querywarden-example/pull/1). To run the tool without the action, install it with `pip install querywarden-cli`.
+
 ```yaml
 jobs:
   querywarden:
