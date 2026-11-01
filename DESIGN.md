@@ -1,6 +1,6 @@
 # sqlgate: design
 
-Status: draft v1, 2026-11-01. Working name, free on PyPI on this date. Milestones 1 (comparison and verdicts), 2 (safe executor and preflight), 3 (privacy checks) and 4 (providers, record and replay) are built and tested on PostgreSQL 16 and 17.
+Status: draft v1, 2026-11-01. Working name, free on PyPI on this date. Milestones 1 (comparison and verdicts), 2 (safe executor and preflight), 3 (privacy checks), 4 (providers, record and replay) and 5 (bookshop demo, with a basic CLI) are built and tested on PostgreSQL 16 and 17.
 
 **One line:** a CI gate for text-to-SQL features. It runs your system against your own PostgreSQL schema and fails the build if accuracy regresses or a query breaks a safety rule.
 
@@ -29,13 +29,7 @@ A team ships a "chat with your data" feature, then changes a prompt or a model. 
 
 **First success, in under 10 minutes:**
 
-```bash
-uvx sqlgate init
-docker compose up -d
-uvx sqlgate run --provider demo
-```
-
-The demo needs no API key: it replays recorded responses against a seeded database and prints a report with a deliberate failure and a deliberate safety violation.
+The steps are in the README. The demo needs no API key: it replays hand-written responses against a seeded database and prints a report with deliberate failures and safety violations.
 
 ## 4. Scope
 

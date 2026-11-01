@@ -1,0 +1,5 @@
+forbidden:
+  - public.customers.email
+  - public.customers.phone
+canaries:
+  - canary-7f3a@example.test

@@ -8,8 +8,14 @@ requires-python = ">=3.12"
 dependencies = [
     "httpx>=0.28.1",
     "psycopg[binary]>=3.2",
+    "pydantic>=2.14.2",
+    "pyyaml>=6.0.3",
     "sqlglot>=25",
+    "typer>=0.27.3",
 ]
+
+[project.scripts]
+sqlgate = "sqlgate.cli:app"
 
 [dependency-groups]
 dev = [
