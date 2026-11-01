@@ -1,6 +1,6 @@
 # sqlgate: design
 
-Status: draft v1, 2026-11-01. Working name, free on PyPI on this date. Milestone 2 (safe executor and preflight) is built and passes its attack suite on PostgreSQL 16 and 17.
+Status: draft v1, 2026-11-01. Working name, free on PyPI on this date. Milestones 1 (comparison and verdicts), 2 (safe executor and preflight), 3 (privacy checks), 4 (providers, record and replay) and 5 (bookshop demo, with a basic CLI) are built and tested on PostgreSQL 16 and 17.
 
 **One line:** a CI gate for text-to-SQL features. It runs your system against your own PostgreSQL schema and fails the build if accuracy regresses or a query breaks a safety rule.
 
@@ -29,13 +29,7 @@ A team ships a "chat with your data" feature, then changes a prompt or a model. 
 
 **First success, in under 10 minutes:**
 
-```bash
-uvx sqlgate init
-docker compose up -d
-uvx sqlgate run --provider demo
-```
-
-The demo needs no API key: it replays recorded responses against a seeded database and prints a report with a deliberate failure and a deliberate safety violation.
+The steps are in the README. The demo needs no API key: it replays hand-written responses against a seeded database and prints a report with deliberate failures and safety violations.
 
 ## 4. Scope
 
@@ -117,7 +111,9 @@ sqlgate calls your system and does not own your prompt. It supports three provid
 
 `usage` is optional.
 
-**Decision: replay is a core feature.** Pull requests from forks have no secrets, and CI should stay free and repeatable. Responses are keyed by a hash of the question, provider configuration and a user-set `prompt_version`.
+**Decision: replay is a core feature.** Pull requests from forks have no secrets, and CI should stay free and repeatable. Responses are keyed by a hash of the question, a user-set provider id, a user-set `prompt_version` and the attempt number. Recordings never store credentials or the system prompt, so changing a prompt without changing `prompt_version` is not detected.
+
+**OpenAI-compatible replies:** sqlgate accepts a JSON answer, fenced SQL or bare SQL. A reply with no SQL at all counts as a refusal, which may need tuning for chatty models.
 
 ## 8. Execution safety
 
@@ -138,7 +134,7 @@ Generated SQL is untrusted input. The database is the real boundary, and static 
 
 Two independent checks, either of which raises `policy_violation`:
 
-1. **Static lineage:** sqlglot traces result columns back to source columns and checks them against the `forbidden` list.
+1. **Static lineage:** sqlglot traces every column the query uses, including filters and joins, back through CTEs, subqueries and view definitions to the source columns, and checks them against the `forbidden` list. This catches leaks through a view the role may read. SQL it cannot analyze, such as `query_to_xml`, is reported as unknown.
 2. **Canary values:** seed fixture rows with unique markers such as `canary-7f3a@example.test`, then scan returned rows.
 
 ```yaml
@@ -150,7 +146,7 @@ canaries:
   - canary-7f3a@example.test
 ```
 
-**Limit:** this catches direct or lightly transformed leaks. It does not catch inference from aggregates, and canaries can miss heavily transformed values. The README must say so.
+**Limit:** the canary catches case changes, added separators, concatenation and reversal, but not hashes, encodings, partial values or inserted text. Lineage covers those when the query can be analyzed. Neither check judges inference from aggregates, and a view that deliberately mixes a secret into an approved column counts as a use of that secret. The README must say so.
 
 ## 10. Result comparison
 
@@ -160,12 +156,14 @@ canaries:
 | Row order | Multiset by default, ordered only with `ordered: true` |
 | Duplicates | Kept |
 | NULL | Equal only to NULL |
-| Numbers | `Decimal` compared exactly, floats within a tolerance, default `1e-6` |
+| Numbers | `Decimal` compared exactly. If either side of a column has floats, the column uses an absolute tolerance (default `1e-6`) plus a fixed relative tolerance of `1e-9` for large sums |
 | Column names | Ignored, since aliases are free |
 | Column order | Ignored, by matching columns on their values |
 | Extra columns | Fail by default, allowed with `allow_extra_columns: true` |
 
-**Verdicts:** `correct`, `wrong_result`, `wrong_shape`, `execution_error`, `unknown_schema`, `timeout`, `blocked_statement`, `policy_violation`, `refused`, `over_refused`, `disputed`, `provider_error`.
+Truncated results are never confirmed as correct. Dates and timestamps are different types, and the same instant in two time zones is equal.
+
+**Verdicts:** `correct`, `wrong_result`, `wrong_shape`, `execution_error`, `unknown_schema`, `timeout`, `blocked_statement`, `policy_violation`, `refused`, `over_refused`, `should_have_refused`, `disputed`, `provider_error`.
 
 - `refused` is a pass on a refusal case.
 - `over_refused` means the system refused a question it should answer.

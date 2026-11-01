@@ -25,12 +25,18 @@ INSERT INTO public.orders VALUES (1, 1, 10.50), (2, 1, 20.00), (3, 2, 5.25);
 
 CREATE SCHEMA reporting;
 CREATE VIEW reporting.orders AS SELECT id, customer_id, total FROM public.orders;
+CREATE VIEW reporting.customer_names AS SELECT id, name FROM public.customers;
+CREATE VIEW reporting.customer_contacts AS SELECT id, name, lower(email) AS contact FROM public.customers;
+CREATE VIEW reporting.contacts_again AS SELECT id, contact AS reach_at FROM reporting.customer_contacts;
+CREATE VIEW reporting.people AS
+    WITH c AS (SELECT id, email AS mail FROM public.customers) SELECT id, mail FROM c
+    UNION ALL SELECT id, 'none' FROM public.orders;
 
 REVOKE ALL ON SCHEMA public FROM PUBLIC;
 REVOKE CREATE, TEMPORARY ON DATABASE test FROM PUBLIC;
 CREATE ROLE reader LOGIN PASSWORD 'reader';
 GRANT USAGE ON SCHEMA reporting TO reader;
-GRANT SELECT ON reporting.orders TO reader;
+GRANT SELECT ON ALL TABLES IN SCHEMA reporting TO reader;
 """
 FORBIDDEN = ["public.customers.email", "public.customers"]
 
