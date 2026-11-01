@@ -1,5 +1,5 @@
 [project]
-name = "querywarden"
+name = "querywarden-cli"
 version = "0.1.0"
 description = "A CI gate for text-to-SQL features on PostgreSQL: accuracy regressions and safety violations fail the build."
 readme = "README.md"
