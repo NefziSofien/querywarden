@@ -5,10 +5,10 @@ from dataclasses import replace
 import psycopg
 import pytest
 
-from sqlgate.canary import find_canaries
-from sqlgate.executor import Executor, Status
-from sqlgate.lineage import check_lineage, load_catalog
-from sqlgate.preflight import run_preflight
+from querywarden.canary import find_canaries
+from querywarden.executor import Executor, Status
+from querywarden.lineage import check_lineage, load_catalog
+from querywarden.preflight import run_preflight
 
 EMAIL = "public.customers.email"
 FORBIDDEN = [EMAIL]

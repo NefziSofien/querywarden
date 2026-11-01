@@ -2,8 +2,8 @@
 
 import pytest
 
-from sqlgate.compare import Options, Outcome, compare
-from sqlgate.executor import Executor, Status
+from querywarden.compare import Options, Outcome, compare
+from querywarden.executor import Executor, Status
 
 EQUIVALENT = [
     (

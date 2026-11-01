@@ -7,7 +7,7 @@ import hashlib
 import json
 from pathlib import Path
 
-from sqlgate.providers.base import Answer, Provider, ProviderError, parse_answer
+from querywarden.providers.base import Answer, Provider, ProviderError, parse_answer
 
 
 class RecordingError(ProviderError):

@@ -5,10 +5,10 @@ from pathlib import Path
 import httpx
 import pytest
 
-from sqlgate.providers import Answer, ProviderError, Usage, parse_answer
-from sqlgate.providers.command import CommandProvider
-from sqlgate.providers.http import HttpProvider, OpenAICompatibleProvider, extract_answer
-from sqlgate.providers.replay import RecordingError, RecordingProvider, RecordingStore, ReplayProvider, recording_key
+from querywarden.providers import Answer, ProviderError, Usage, parse_answer
+from querywarden.providers.command import CommandProvider
+from querywarden.providers.http import HttpProvider, OpenAICompatibleProvider, extract_answer
+from querywarden.providers.replay import RecordingError, RecordingProvider, RecordingStore, ReplayProvider, recording_key
 
 
 # Contract
@@ -102,7 +102,7 @@ def test_command_timeout(tmp_path):
 
 def test_missing_executable():
     with pytest.raises(ProviderError, match="could not start"):
-        CommandProvider(["/nonexistent/sqlgate-system"]).ask("q")
+        CommandProvider(["/nonexistent/querywarden-system"]).ask("q")
 
 
 def test_empty_command_is_a_setup_error():
@@ -129,7 +129,7 @@ def test_http_sends_question_and_parses_answer():
 
 @pytest.fixture
 def no_sleep(monkeypatch):
-    monkeypatch.setattr("sqlgate.providers.http.time.sleep", lambda _: None)
+    monkeypatch.setattr("querywarden.providers.http.time.sleep", lambda _: None)
 
 
 @pytest.mark.parametrize("status", [429, 500, 503])

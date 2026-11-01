@@ -1,4 +1,4 @@
-# sqlgate
+# querywarden
 
 A CI gate for text-to-SQL features on PostgreSQL. Work in progress: the GitHub Action and a package release are not done yet.
 
@@ -8,13 +8,13 @@ The demo needs Docker and uv, and no API key. It replays hand-written answers ag
 
 ```bash
 docker compose -f examples/bookshop/compose.yaml up -d --wait
-export SQLGATE_DATABASE_URL=postgresql://sqlgate_reader:demo-only@127.0.0.1:55432/bookshop
-uv run sqlgate validate --config examples/bookshop/sqlgate/sqlgate.yaml
-uv run sqlgate run --config examples/bookshop/sqlgate/sqlgate.yaml
+export QUERYWARDEN_DATABASE_URL=postgresql://querywarden_reader:demo-only@127.0.0.1:55432/bookshop
+uv run querywarden validate --config examples/bookshop/querywarden/querywarden.yaml
+uv run querywarden run --config examples/bookshop/querywarden/querywarden.yaml
 docker compose -f examples/bookshop/compose.yaml down
 ```
 
-`sqlgate run` exits with 1 because of the planted safety failures. Exit codes: 0 pass, 1 gate failed, 2 configuration or setup error.
+`querywarden run` exits with 1 because of the planted safety failures. Exit codes: 0 pass, 1 gate failed, 2 configuration or setup error.
 
 ## Gates
 
@@ -31,7 +31,7 @@ Docker is required, because the safety tests run against a real PostgreSQL serve
 
 ```bash
 uv run pytest
-SQLGATE_PG_IMAGE=postgres:16-alpine uv run pytest
+QUERYWARDEN_PG_IMAGE=postgres:16-alpine uv run pytest
 ```
 
 ## Known limits

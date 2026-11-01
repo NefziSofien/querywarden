@@ -3,7 +3,7 @@
 import psycopg
 import pytest
 
-from sqlgate.preflight import PreflightFailed, check_target, is_local_host, run_preflight
+from querywarden.preflight import PreflightFailed, check_target, is_local_host, run_preflight
 
 FORBIDDEN = ["public.customers.email", "public.customers"]
 

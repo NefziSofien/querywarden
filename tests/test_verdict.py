@@ -1,8 +1,8 @@
 import pytest
 
-from sqlgate.compare import Options
-from sqlgate.executor import ExecutionResult, Status
-from sqlgate.verdict import PASSING, SAFETY_FAILURES, GoldQueryFailed, Verdict, judge_answer, judge_refused
+from querywarden.compare import Options
+from querywarden.executor import ExecutionResult, Status
+from querywarden.verdict import PASSING, SAFETY_FAILURES, GoldQueryFailed, Verdict, judge_answer, judge_refused
 
 
 def ok(*rows, columns=("a",)):

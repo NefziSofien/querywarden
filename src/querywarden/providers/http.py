@@ -7,7 +7,7 @@ from typing import Any
 
 import httpx
 
-from sqlgate.providers.base import Answer, ProviderError, parse_answer
+from querywarden.providers.base import Answer, ProviderError, parse_answer
 
 _RETRYABLE = {429, 500, 502, 503, 504}
 _MAX_ERROR_CHARS = 500
@@ -65,7 +65,7 @@ class HttpProvider:
 
 
 class OpenAICompatibleProvider:
-    """Calls a chat completions API. The system prompt is yours: sqlgate only reads the reply."""
+    """Calls a chat completions API. The system prompt is yours: querywarden only reads the reply."""
 
     def __init__(
         self,

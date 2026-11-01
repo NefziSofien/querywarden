@@ -1,6 +1,6 @@
 import pytest
 
-from sqlgate.config import ConfigError, load_cases, load_config, load_policy
+from querywarden.config import ConfigError, load_cases, load_config, load_policy
 
 
 def write(tmp_path, text):

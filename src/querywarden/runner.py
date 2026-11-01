@@ -3,13 +3,13 @@
 import time
 from dataclasses import dataclass, field
 
-from sqlgate.canary import find_canaries
-from sqlgate.compare import Outcome, compare
-from sqlgate.config import Case, Policy
-from sqlgate.executor import ExecutionResult, Executor, Status
-from sqlgate.lineage import Catalog, check_lineage
-from sqlgate.providers.base import Provider, ProviderError, Usage
-from sqlgate.verdict import GoldQueryFailed, Judgement, Verdict, judge_answer, judge_refused
+from querywarden.canary import find_canaries
+from querywarden.compare import Outcome, compare
+from querywarden.config import Case, Policy
+from querywarden.executor import ExecutionResult, Executor, Status
+from querywarden.lineage import Catalog, check_lineage
+from querywarden.providers.base import Provider, ProviderError, Usage
+from querywarden.verdict import GoldQueryFailed, Judgement, Verdict, judge_answer, judge_refused
 
 
 @dataclass(frozen=True)

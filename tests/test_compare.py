@@ -3,8 +3,8 @@ from decimal import Decimal
 
 import pytest
 
-from sqlgate.compare import Options, Outcome, compare
-from sqlgate.executor import ExecutionResult, Status
+from querywarden.compare import Options, Outcome, compare
+from querywarden.executor import ExecutionResult, Status
 
 MATCH, SHAPE, WRONG = Outcome.MATCH, Outcome.WRONG_SHAPE, Outcome.WRONG_RESULT
 

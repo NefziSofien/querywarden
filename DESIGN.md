@@ -1,6 +1,6 @@
-# sqlgate: design
+# querywarden: design
 
-Status: draft v1, 2026-11-01. Working name, free on PyPI on this date. Milestones 1 (comparison and verdicts), 2 (safe executor and preflight), 3 (privacy checks), 4 (providers, record and replay), 5 (bookshop demo, with a basic CLI) and 6 (gates, baseline, statistics, reports) are built and tested on PostgreSQL 16 and 17.
+Status: draft v1, 2026-11-01. Milestones 1 (comparison and verdicts), 2 (safe executor and preflight), 3 (privacy checks), 4 (providers, record and replay), 5 (bookshop demo, with a basic CLI) and 6 (gates, baseline, statistics, reports) are built and tested on PostgreSQL 16 and 17.
 
 **One line:** a CI gate for text-to-SQL features. It runs your system against your own PostgreSQL schema and fails the build if accuracy regresses or a query breaks a safety rule.
 
@@ -21,7 +21,7 @@ A team ships a "chat with your data" feature, then changes a prompt or a model. 
 | [RBAC-Text2SQL-Benchmark](https://github.com/2020dfff/RBAC-Text2SQL-Benchmark) | Measures access-control violations | Research benchmark, not a CI tool |
 | Small harness repos such as [llsx123/text-to-sql-evaluation](https://github.com/llsx123/text-to-sql-evaluation) | Good comparison logic | Scripts around one dataset, not installable tools, SQLite only in this example |
 
-**Position:** sqlgate does not rank models. It protects one team's system on that team's schema. This survey covers the projects I found, so a closer competitor may exist.
+**Position:** querywarden does not rank models. It protects one team's system on that team's schema. This survey covers the projects I found, so a closer competitor may exist.
 
 ## 3. Users and first success
 
@@ -68,7 +68,7 @@ flowchart LR
 ## 6. Test cases
 
 ```yaml
-# sqlgate/cases.yaml
+# querywarden/cases.yaml
 defaults:
   role: analyst
 
@@ -97,7 +97,7 @@ cases:
 
 ## 7. Provider contract
 
-sqlgate calls your system and does not own your prompt. It supports three providers:
+querywarden calls your system and does not own your prompt. It supports three providers:
 
 | Provider | Use |
 |---|---|
@@ -113,7 +113,7 @@ sqlgate calls your system and does not own your prompt. It supports three provid
 
 **Decision: replay is a core feature.** Pull requests from forks have no secrets, and CI should stay free and repeatable. Responses are keyed by a hash of the question, a user-set provider id, a user-set `prompt_version` and the attempt number. Recordings never store credentials or the system prompt, so changing a prompt without changing `prompt_version` is not detected.
 
-**OpenAI-compatible replies:** sqlgate accepts a JSON answer, fenced SQL or bare SQL. A reply with no SQL at all counts as a refusal, which may need tuning for chatty models.
+**OpenAI-compatible replies:** querywarden accepts a JSON answer, fenced SQL or bare SQL. A reply with no SQL at all counts as a refusal, which may need tuning for chatty models.
 
 ## 8. Execution safety
 
@@ -138,7 +138,7 @@ Two independent checks, either of which raises `policy_violation`:
 2. **Canary values:** seed fixture rows with unique markers such as `canary-7f3a@example.test`, then scan returned rows.
 
 ```yaml
-# sqlgate/policy.yaml
+# querywarden/policy.yaml
 forbidden:
   - public.customers.email
   - public.customers.phone
@@ -195,8 +195,8 @@ Exit codes: `0` pass, `1` gate failed, `2` configuration or preflight error.
 
 Published research shows that gold queries are often wrong, so the tool treats gold as reviewable.
 
-- `sqlgate validate` runs every gold query and flags errors, empty results, and non-deterministic results by running them twice.
-- `sqlgate review <case>` shows the gold and model queries with a result diff.
+- `querywarden validate` runs every gold query and flags errors, empty results, and non-deterministic results by running them twice.
+- `querywarden review <case>` shows the gold and model queries with a result diff.
 - `disputed: "reason"` excludes a case from accuracy, and reports always list these cases and their count.
 
 ## 13. Reports
@@ -220,7 +220,7 @@ Sample reports must use real runs and state the model, date, `prompt_version` an
 | Integration tests | testcontainers-python | Real PostgreSQL, no mocks for safety tests |
 
 ```
-src/sqlgate/
+src/querywarden/
   cli.py  config.py  preflight.py  executor.py  statement.py
   compare.py  lineage.py  canary.py  verdict.py  gates.py  stats.py  report.py
   providers/{command,http,replay}.py
@@ -239,7 +239,7 @@ License: MIT. The demo data is synthetic and written for this project. BIRD (CC 
 | 2 | Safe executor and preflight | 10 | Attack suite passes on real PostgreSQL |
 | 3 | Lineage and canary checks | 5 | Direct, aliased, CTE, subquery and concatenated leaks are caught |
 | 4 | Providers, record and replay | 4 | The demo runs offline |
-| 5 | Bookshop demo with verified cases | 5 | `sqlgate validate` is clean on about 40 cases |
+| 5 | Bookshop demo with verified cases | 5 | `querywarden validate` is clean on about 40 cases |
 | 6 | Gates, baseline, statistics, reports | 5 | Exit codes tested, Markdown snapshot tested |
 | 7 | GitHub Action and PyPI v0.1.0 | 3 | A separate example repo shows a blocked PR |
 | 8 | Real model run and write-up | 2 | Published results with method and limits |
@@ -254,7 +254,7 @@ License: MIT. The demo data is synthetic and written for this project. BIRD (CC 
 | Users point it at production | Host guard, preflight checks, clear documentation |
 | False confidence in the privacy check | State its limits in the README and in reports |
 | Lineage fails on complex SQL | Report `lineage_unknown` instead of passing silently, and treat it as a warning that `--strict` turns into a failure |
-| promptfoo or similar adds execution | Offer sqlgate as a provider or assertion for them. The safe executor stays useful |
+| promptfoo or similar adds execution | Offer querywarden as a provider or assertion for them. The safe executor stays useful |
 | Comparison rules reject valid answers | Case-level overrides, plus `review` and `disputed` |
 
 ## 17. How we will know it works
@@ -266,6 +266,6 @@ License: MIT. The demo data is synthetic and written for this project. BIRD (CC 
 
 ## 18. Open decisions
 
-1. **Name:** `sqlgate` is free on PyPI. Check the GitHub and trademark situation before publishing.
-2. **PostgreSQL versions:** proposed 16 and 17, matching the versions you already use.
-3. **Demo domain:** proposed bookshop, which is neutral and unrelated to any employer or client data.
+1. **Name:** `querywarden`, chosen after `sqlgate` clashed with the commercial SQLGate IDE. It was free on PyPI and GitHub on 2026-11-01. No trademark registry has been checked.
+2. **PostgreSQL versions:** 16 and 17, tested in CI.
+3. **Demo domain:** bookshop, which is neutral and unrelated to any employer or client data.

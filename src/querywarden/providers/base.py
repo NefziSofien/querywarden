@@ -1,4 +1,4 @@
-"""The contract between sqlgate and the system under test. Every answer is untrusted input."""
+"""The contract between querywarden and the system under test. Every answer is untrusted input."""
 
 import math
 from dataclasses import asdict, dataclass
