@@ -1,6 +1,6 @@
 # sqlgate
 
-A CI gate for text-to-SQL features on PostgreSQL. Work in progress: only the safe executor exists so far.
+A CI gate for text-to-SQL features on PostgreSQL. Work in progress: the safe executor, result comparison and verdicts exist so far, with no command-line tool yet.
 
 ## Run the tests
 

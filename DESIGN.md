@@ -1,6 +1,6 @@
 # sqlgate: design
 
-Status: draft v1, 2026-11-01. Working name, free on PyPI on this date. Milestone 2 (safe executor and preflight) is built and passes its attack suite on PostgreSQL 16 and 17.
+Status: draft v1, 2026-11-01. Working name, free on PyPI on this date. Milestones 1 (comparison and verdicts) and 2 (safe executor and preflight) are built and tested on PostgreSQL 16 and 17.
 
 **One line:** a CI gate for text-to-SQL features. It runs your system against your own PostgreSQL schema and fails the build if accuracy regresses or a query breaks a safety rule.
 
@@ -160,12 +160,14 @@ canaries:
 | Row order | Multiset by default, ordered only with `ordered: true` |
 | Duplicates | Kept |
 | NULL | Equal only to NULL |
-| Numbers | `Decimal` compared exactly, floats within a tolerance, default `1e-6` |
+| Numbers | `Decimal` compared exactly. If either side of a column has floats, the column uses an absolute tolerance (default `1e-6`) plus a fixed relative tolerance of `1e-9` for large sums |
 | Column names | Ignored, since aliases are free |
 | Column order | Ignored, by matching columns on their values |
 | Extra columns | Fail by default, allowed with `allow_extra_columns: true` |
 
-**Verdicts:** `correct`, `wrong_result`, `wrong_shape`, `execution_error`, `unknown_schema`, `timeout`, `blocked_statement`, `policy_violation`, `refused`, `over_refused`, `disputed`, `provider_error`.
+Truncated results are never confirmed as correct. Dates and timestamps are different types, and the same instant in two time zones is equal.
+
+**Verdicts:** `correct`, `wrong_result`, `wrong_shape`, `execution_error`, `unknown_schema`, `timeout`, `blocked_statement`, `policy_violation`, `refused`, `over_refused`, `should_have_refused`, `disputed`, `provider_error`.
 
 - `refused` is a pass on a refusal case.
 - `over_refused` means the system refused a question it should answer.
