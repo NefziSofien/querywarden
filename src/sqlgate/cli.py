@@ -1,4 +1,4 @@
-"""Command line. Exit codes: 0 pass, 1 cases failed, 2 configuration or setup error."""
+"""Command line. Exit codes: 0 pass, 1 gate failed, 2 configuration or setup error."""
 
 from collections import Counter
 from pathlib import Path
@@ -8,12 +8,14 @@ import typer
 
 from sqlgate.config import Config, ConfigError, ProviderConfig, database_url, load_cases, load_config, load_policy
 from sqlgate.executor import ConnectionFailed, Executor
+from sqlgate.gates import evaluate, load_baseline
 from sqlgate.lineage import load_catalog
 from sqlgate.preflight import PreflightFailed, run_preflight
 from sqlgate.providers.base import Provider
 from sqlgate.providers.command import CommandProvider
 from sqlgate.providers.http import HttpProvider, OpenAICompatibleProvider
 from sqlgate.providers.replay import RecordingError, RecordingProvider, RecordingStore, ReplayProvider
+from sqlgate.report import build_report, render_markdown, write_json
 from sqlgate.runner import Runner, validate_cases
 from sqlgate.verdict import PASSING, SAFETY_FAILURES, GoldQueryFailed
 
@@ -92,25 +94,48 @@ def run(
     config_path: Path = ConfigOption,
     record: bool = typer.Option(False, help="Save live answers to the recordings file."),
     repeats: int = typer.Option(1, min=1, help="Ask each question this many times."),
+    baseline: Path | None = typer.Option(None, help="A previous --json-out report to compare accuracy against."),
+    allowed_drop: float = typer.Option(0.0, min=0.0, max=1.0, help="Accuracy drop to tolerate, from 0 to 1."),
+    strict: bool = typer.Option(False, help="Also fail on newly failing cases, removed cases and unknown lineage."),
+    json_out: Path | None = typer.Option(None, help="Write the JSON report here. It can be the next baseline."),
+    markdown_out: Path | None = typer.Option(None, help="Write the Markdown report here."),
 ) -> None:
-    """Run every case and print one verdict per case."""
+    """Run every case, apply the gates and report."""
     try:
+        baseline_report = load_baseline(baseline) if baseline else None
         config, base, policy, cases, executor, catalog = _prepare(config_path)
         runner = Runner(executor, catalog, policy, _build_provider(config, base, record))
         results = [runner.run_case(case, attempt) for case in cases for attempt in range(repeats)]
     except (ConfigError, PreflightFailed, ConnectionFailed, GoldQueryFailed, RecordingError, OSError, psycopg.OperationalError) as e:
         raise _fail_setup(e) from e
 
+    report = build_report(cases, results, config.provider.id, config.provider.prompt_version, repeats)
+    gate = evaluate(report, baseline_report, allowed_drop, strict)
+    if json_out:
+        write_json(report, json_out)
+    if markdown_out:
+        markdown_out.parent.mkdir(parents=True, exist_ok=True)
+        markdown_out.write_text(render_markdown(report, gate), encoding="utf-8")
+
     for result in results:
         if result.verdict in PASSING:
             continue
         safety = "SAFETY " if result.verdict in SAFETY_FAILURES else ""
         typer.echo(f"{safety}{result.verdict}: {result.case_id}: {result.detail}")
-    for note in sorted({(r.case_id, u) for r in results for u in r.lineage_unknown}):
-        typer.echo(f"unknown lineage: {note[0]}: {note[1]}")
     counts = Counter(result.verdict.value for result in results)
     typer.echo(", ".join(f"{name}: {count}" for name, count in sorted(counts.items())))
-    if any(result.verdict not in PASSING and result.verdict.value != "disputed" for result in results):
+    for warning in gate.warnings:
+        typer.echo(f"warning: {warning}")
+    if gate.comparison:
+        typer.echo(
+            f"baseline: {gate.comparison.baseline_accuracy:.1%} to {gate.comparison.current_accuracy:.1%}"
+            f" on {gate.comparison.shared} shared cases"
+        )
+    for failure in gate.failures:
+        typer.secho(f"gate failed: {failure}", fg=typer.colors.RED)
+    typer.echo(f"accuracy: {report['summary']['passed']} of {report['summary']['evaluated']}")
+    typer.echo("PASSED" if gate.passed else "FAILED")
+    if not gate.passed:
         raise typer.Exit(1)
 
 

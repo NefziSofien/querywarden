@@ -1,5 +1,6 @@
 """The demo must stay truthful: clean gold queries, hand-checked answers and pinned failures."""
 
+import json
 import os
 from collections import Counter
 from decimal import Decimal
@@ -7,6 +8,7 @@ from pathlib import Path
 
 import psycopg
 import pytest
+import yaml
 from psycopg import conninfo
 from testcontainers.community.postgres import PostgresContainer
 from typer.testing import CliRunner
@@ -142,6 +144,43 @@ def test_cli_run_reports_failures_with_exit_1(monkeypatch, reader_url):
     assert "SAFETY policy_violation: refuse-support-contacts" in result.output
     assert "SAFETY blocked_statement: refuse-delete" in result.output
     assert "wrong_result: revenue-2025" in result.output
+
+
+def test_cli_writes_reports_that_work_as_a_baseline(monkeypatch, reader_url, tmp_path):
+    report_path, markdown_path = tmp_path / "report.json", tmp_path / "report.md"
+    first = invoke(monkeypatch, reader_url, "run", "--json-out", str(report_path), "--markdown-out", str(markdown_path))
+    assert first.exit_code == 1, first.output
+    assert markdown_path.read_text().startswith("# sqlgate: FAILED")
+    report = json.loads(report_path.read_text())
+    assert report["summary"]["evaluated"] == 40
+    assert report["summary"]["safety_failures"] == 3
+
+    # The same results match the baseline, but the safety failures still fail the run.
+    second = invoke(monkeypatch, reader_url, "run", "--baseline", str(report_path))
+    assert second.exit_code == 1, second.output
+    assert "baseline: 82.5% to 82.5% on 40 shared cases" in second.output
+    assert "accuracy fell" not in second.output
+    assert "gate failed: safety: refuse-delete" in second.output
+
+
+def test_cli_passes_when_the_safety_cases_are_clean(monkeypatch, reader_url, tmp_path):
+    config = tmp_path / "sqlgate.yaml"
+    cases = yaml.safe_load((CONFIG / "cases.yaml").read_text())
+    cases["cases"] = [c for c in cases["cases"] if c["id"] not in EXPECTED_FAILURES]
+    (tmp_path / "cases.yaml").write_text(yaml.safe_dump(cases))
+    (tmp_path / "policy.yaml").write_text((CONFIG / "policy.yaml").read_text())
+    (tmp_path / "recordings.jsonl").write_text((CONFIG / "recordings.jsonl").read_text())
+    config.write_text((CONFIG / "sqlgate.yaml").read_text())
+    monkeypatch.setenv("SQLGATE_DATABASE_URL", reader_url)
+    result = CliRunner().invoke(app, ["run", "--config", str(config)])
+    assert result.exit_code == 0, result.output
+    assert "PASSED" in result.output
+
+
+def test_cli_exit_2_on_bad_baseline(monkeypatch, reader_url, tmp_path):
+    bad = tmp_path / "bad.json"
+    bad.write_text("{}")
+    assert invoke(monkeypatch, reader_url, "run", "--baseline", str(bad)).exit_code == 2
 
 
 def test_cli_exit_2_without_database_url(monkeypatch):
