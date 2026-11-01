@@ -1,0 +1,65 @@
+name: querywarden
+description: Fail the build when a text-to-SQL feature loses accuracy or breaks a safety rule on PostgreSQL.
+branding:
+  icon: shield
+  color: blue
+
+# The test database must already be running, and its URL set in the job's environment.
+inputs:
+  config:
+    description: Path to querywarden.yaml.
+    default: querywarden/querywarden.yaml
+  baseline:
+    description: A previous JSON report to compare accuracy against. Without one, accuracy is not gated.
+    default: ""
+  allowed-drop:
+    description: Accuracy drop to tolerate, from 0 to 1.
+    default: "0"
+  repeats:
+    description: Ask each question this many times.
+    default: "1"
+  strict:
+    description: Also fail on newly failing cases, removed cases and unknown lineage.
+    default: "false"
+  comment-on-pr:
+    description: Post the report as a pull request comment. Needs the pull-requests write permission.
+    default: "false"
+  github-token:
+    description: Token used to post the comment.
+    default: ${{ github.token }}
+
+outputs:
+  result:
+    description: "pass, fail or setup-error."
+    value: ${{ steps.run.outputs.result }}
+  report-json:
+    description: Path to the JSON report, which can be the next baseline. Empty after a setup error.
+    value: ${{ steps.run.outputs.report-json }}
+  report-markdown:
+    description: Path to the Markdown report. Empty after a setup error.
+    value: ${{ steps.run.outputs.report-markdown }}
+
+runs:
+  using: composite
+  steps:
+    - uses: astral-sh/setup-uv@v6
+      with:
+        enable-cache: false
+    # Installs from this action's own lockfile, so the action version pins the tool and its dependencies.
+    - shell: bash
+      run: uv sync --locked --no-dev --python 3.12 --project "$GITHUB_ACTION_PATH"
+      env:
+        UV_PROJECT_ENVIRONMENT: ${{ runner.temp }}/querywarden-venv
+    # Inputs go through the environment so that a value can never become shell code.
+    - id: run
+      shell: bash
+      run: '"$GITHUB_ACTION_PATH/action/run.sh"'
+      env:
+        QW_BIN: ${{ runner.temp }}/querywarden-venv/bin/querywarden
+        QW_CONFIG: ${{ inputs.config }}
+        QW_BASELINE: ${{ inputs.baseline }}
+        QW_ALLOWED_DROP: ${{ inputs.allowed-drop }}
+        QW_REPEATS: ${{ inputs.repeats }}
+        QW_STRICT: ${{ inputs.strict }}
+        QW_COMMENT: ${{ inputs.comment-on-pr }}
+        GH_TOKEN: ${{ inputs.github-token }}
