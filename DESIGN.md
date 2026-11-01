@@ -1,6 +1,6 @@
 # sqlgate: design
 
-Status: draft v1, 2026-11-01. Working name, free on PyPI on this date. Milestones 1 (comparison and verdicts), 2 (safe executor and preflight) and 3 (privacy checks) are built and tested on PostgreSQL 16 and 17.
+Status: draft v1, 2026-11-01. Working name, free on PyPI on this date. Milestones 1 (comparison and verdicts), 2 (safe executor and preflight), 3 (privacy checks) and 4 (providers, record and replay) are built and tested on PostgreSQL 16 and 17.
 
 **One line:** a CI gate for text-to-SQL features. It runs your system against your own PostgreSQL schema and fails the build if accuracy regresses or a query breaks a safety rule.
 
@@ -117,7 +117,9 @@ sqlgate calls your system and does not own your prompt. It supports three provid
 
 `usage` is optional.
 
-**Decision: replay is a core feature.** Pull requests from forks have no secrets, and CI should stay free and repeatable. Responses are keyed by a hash of the question, provider configuration and a user-set `prompt_version`.
+**Decision: replay is a core feature.** Pull requests from forks have no secrets, and CI should stay free and repeatable. Responses are keyed by a hash of the question, a user-set provider id, a user-set `prompt_version` and the attempt number. Recordings never store credentials or the system prompt, so changing a prompt without changing `prompt_version` is not detected.
+
+**OpenAI-compatible replies:** sqlgate accepts a JSON answer, fenced SQL or bare SQL. A reply with no SQL at all counts as a refusal, which may need tuning for chatty models.
 
 ## 8. Execution safety
 

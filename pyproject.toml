@@ -6,6 +6,7 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.12"
 dependencies = [
+    "httpx>=0.28.1",
     "psycopg[binary]>=3.2",
     "sqlglot>=25",
 ]
