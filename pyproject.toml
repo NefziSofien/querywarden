@@ -1,10 +1,19 @@
 [project]
 name = "querywarden"
-version = "0.0.1"
+version = "0.1.0"
 description = "A CI gate for text-to-SQL features on PostgreSQL: accuracy regressions and safety violations fail the build."
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.12"
+authors = [{ name = "Sofien Nefzi" }]
+keywords = ["text-to-sql", "postgresql", "llm", "evaluation", "ci"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Database",
+    "Topic :: Software Development :: Testing",
+]
 dependencies = [
     "httpx>=0.28.1",
     "psycopg[binary]>=3.2",
@@ -13,6 +22,9 @@ dependencies = [
     "sqlglot>=25",
     "typer>=0.27.3",
 ]
+
+[project.urls]
+Repository = "https://github.com/NefziSofien/querywarden"
 
 [project.scripts]
 querywarden = "querywarden.cli:app"

@@ -40,3 +40,7 @@ QUERYWARDEN_PG_IMAGE=postgres:16-alpine uv run pytest
 - Single-label hostnames are treated as local, so Docker service names work in CI. The role checks still apply.
 - The privacy checks catch direct uses of forbidden columns, including through views, and planted values in results. They do not judge what could be inferred from aggregates, and SQL that cannot be analyzed is reported as unknown, not as safe.
 - Do not point this tool at a production database.
+
+## GitHub Action
+
+See [docs/github-action.md](docs/github-action.md) for the inputs, outputs and a workflow example.

@@ -22,3 +22,33 @@ jobs:
       - run: uv run pytest -q
         env:
           QUERYWARDEN_PG_IMAGE: postgres:${{ matrix.postgres }}-alpine
+
+  action:
+    runs-on: ubuntu-latest
+    env:
+      QUERYWARDEN_DATABASE_URL: postgresql://querywarden_reader:demo-only@127.0.0.1:55432/bookshop
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker compose -f examples/bookshop/compose.yaml up -d --wait
+      # The demo's recordings contain planted failures, so the gate must block this run.
+      - id: demo
+        uses: ./
+        continue-on-error: true
+        with:
+          config: examples/bookshop/querywarden/querywarden.yaml
+      - id: missing
+        uses: ./
+        continue-on-error: true
+        with:
+          config: does/not/exist.yaml
+      - name: Check what the action reported
+        env:
+          DEMO_RESULT: ${{ steps.demo.outputs.result }}
+          DEMO_OUTCOME: ${{ steps.demo.outcome }}
+          DEMO_JSON: ${{ steps.demo.outputs.report-json }}
+          MISSING_RESULT: ${{ steps.missing.outputs.result }}
+          MISSING_OUTCOME: ${{ steps.missing.outcome }}
+        run: |
+          [[ "$DEMO_RESULT" == fail && "$DEMO_OUTCOME" == failure ]]
+          [[ "$(jq .summary.evaluated "$DEMO_JSON")" -gt 0 ]]
+          [[ "$MISSING_RESULT" == setup-error && "$MISSING_OUTCOME" == failure ]]
