@@ -1,6 +1,6 @@
 # sqlgate: design
 
-Status: draft v1, 2026-11-01. Working name, free on PyPI on this date. Milestones 1 (comparison and verdicts) and 2 (safe executor and preflight) are built and tested on PostgreSQL 16 and 17.
+Status: draft v1, 2026-11-01. Working name, free on PyPI on this date. Milestones 1 (comparison and verdicts), 2 (safe executor and preflight) and 3 (privacy checks) are built and tested on PostgreSQL 16 and 17.
 
 **One line:** a CI gate for text-to-SQL features. It runs your system against your own PostgreSQL schema and fails the build if accuracy regresses or a query breaks a safety rule.
 
@@ -138,7 +138,7 @@ Generated SQL is untrusted input. The database is the real boundary, and static 
 
 Two independent checks, either of which raises `policy_violation`:
 
-1. **Static lineage:** sqlglot traces result columns back to source columns and checks them against the `forbidden` list.
+1. **Static lineage:** sqlglot traces every column the query uses, including filters and joins, back through CTEs, subqueries and view definitions to the source columns, and checks them against the `forbidden` list. This catches leaks through a view the role may read. SQL it cannot analyze, such as `query_to_xml`, is reported as unknown.
 2. **Canary values:** seed fixture rows with unique markers such as `canary-7f3a@example.test`, then scan returned rows.
 
 ```yaml
@@ -150,7 +150,7 @@ canaries:
   - canary-7f3a@example.test
 ```
 
-**Limit:** this catches direct or lightly transformed leaks. It does not catch inference from aggregates, and canaries can miss heavily transformed values. The README must say so.
+**Limit:** the canary catches case changes, added separators, concatenation and reversal, but not hashes, encodings, partial values or inserted text. Lineage covers those when the query can be analyzed. Neither check judges inference from aggregates, and a view that deliberately mixes a secret into an approved column counts as a use of that secret. The README must say so.
 
 ## 10. Result comparison
 
