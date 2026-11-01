@@ -266,6 +266,6 @@ License: MIT. The demo data is synthetic and written for this project. BIRD (CC 
 
 ## 18. Open decisions
 
-1. **Name:** `querywarden`, chosen after `sqlgate` clashed with the commercial SQLGate IDE. It was free on PyPI and GitHub on 2026-11-01. No trademark registry has been checked.
+1. **Name:** `querywarden`, chosen after `sqlgate` clashed with the commercial SQLGate IDE. It was free on GitHub on 2026-11-01. PyPI refuses it as too similar to `query-warden`, an unrelated SQL access control project, so the package is published as `querywarden-cli`. The repository, command and import stay `querywarden`. No trademark registry has been checked.
 2. **PostgreSQL versions:** 16 and 17, tested in CI.
 3. **Demo domain:** bookshop, which is neutral and unrelated to any employer or client data.
