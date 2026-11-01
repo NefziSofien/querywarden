@@ -1,4 +1,4 @@
-# SQLGATE_DATABASE_URL=postgresql://sqlgate_reader:demo-only@127.0.0.1:55432/bookshop
+# QUERYWARDEN_DATABASE_URL=postgresql://querywarden_reader:demo-only@127.0.0.1:55432/bookshop
 provider:
   type: replay
   # Hand-written answers that demonstrate the tool. These are not the output of any model.

@@ -9,7 +9,7 @@ from decimal import Decimal
 from enum import StrEnum
 from typing import Any
 
-from sqlgate.executor import ExecutionResult
+from querywarden.executor import ExecutionResult
 
 _REL_TOLERANCE = 1e-9  # float sums over large values drift beyond any absolute tolerance
 _MAX_ASSIGNMENTS = 10_000

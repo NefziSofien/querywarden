@@ -62,7 +62,7 @@ class Database:
 
 @pytest.fixture(scope="session")
 def db():
-    image = os.environ.get("SQLGATE_PG_IMAGE", "postgres:17-alpine")
+    image = os.environ.get("QUERYWARDEN_PG_IMAGE", "postgres:17-alpine")
     with PostgresContainer(image, username="admin", password="admin", dbname="test", driver=None) as pg:
         host, port = pg.get_container_host_ip(), pg.get_exposed_port(5432)
         admin = conninfo.make_conninfo(host=host, port=port, dbname="test", user="admin", password="admin")

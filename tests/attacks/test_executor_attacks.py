@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from sqlgate.executor import ConnectionFailed, Executor, Limits, Status
+from querywarden.executor import ConnectionFailed, Executor, Limits, Status
 
 WRITES = [
     "INSERT INTO reporting.orders VALUES (9, 1, 1)",

@@ -21,4 +21,4 @@ jobs:
       - run: uv sync --python 3.12
       - run: uv run pytest -q
         env:
-          SQLGATE_PG_IMAGE: postgres:${{ matrix.postgres }}-alpine
+          QUERYWARDEN_PG_IMAGE: postgres:${{ matrix.postgres }}-alpine

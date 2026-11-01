@@ -7,10 +7,10 @@ from pathlib import Path
 
 import yaml
 
-from sqlgate.providers.base import Answer
-from sqlgate.providers.replay import RecordingStore, recording_key
+from querywarden.providers.base import Answer
+from querywarden.providers.replay import RecordingStore, recording_key
 
-HERE = Path(__file__).parent / "sqlgate"
+HERE = Path(__file__).parent / "querywarden"
 PROVIDER_ID = "scripted-demo"
 PROMPT_VERSION = "demo-1"
 

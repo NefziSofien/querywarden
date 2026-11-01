@@ -7,8 +7,8 @@ from typing import Literal
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
-from sqlgate.canary import _normalize
-from sqlgate.compare import Options
+from querywarden.canary import _normalize
+from querywarden.compare import Options
 
 
 class ConfigError(Exception):
@@ -66,7 +66,7 @@ class ProviderConfig(_Strict):
 
 
 class Config(_Strict):
-    database_url_env: str = "SQLGATE_DATABASE_URL"
+    database_url_env: str = "QUERYWARDEN_DATABASE_URL"
     cases: str = "cases.yaml"
     policy: str = "policy.yaml"
     provider: ProviderConfig

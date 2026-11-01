@@ -9,13 +9,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-from sqlgate.config import Case
-from sqlgate.runner import CaseResult
-from sqlgate.stats import wilson_interval
-from sqlgate.verdict import PASSING, SAFETY_FAILURES, Verdict
+from querywarden.config import Case
+from querywarden.runner import CaseResult
+from querywarden.stats import wilson_interval
+from querywarden.verdict import PASSING, SAFETY_FAILURES, Verdict
 
 if TYPE_CHECKING:
-    from sqlgate.gates import GateResult
+    from querywarden.gates import GateResult
 
 SCHEMA_VERSION = 1
 _MAX_DETAIL_CHARS = 300
@@ -115,7 +115,7 @@ def _cell(text: object) -> str:
 
 def render_markdown(report: dict[str, Any], gate: GateResult) -> str:
     summary = report["summary"]
-    lines = [f"# sqlgate: {'PASSED' if gate.passed else 'FAILED'}", ""]
+    lines = [f"# querywarden: {'PASSED' if gate.passed else 'FAILED'}", ""]
     if gate.failures:
         lines += ["## Why it failed", "", *[f"- {_cell(f)}" for f in gate.failures], ""]
 

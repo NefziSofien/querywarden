@@ -13,17 +13,17 @@ from psycopg import conninfo
 from testcontainers.community.postgres import PostgresContainer
 from typer.testing import CliRunner
 
-from sqlgate.cli import app
-from sqlgate.config import ConfigError, load_cases, load_policy
-from sqlgate.executor import Executor, Status
-from sqlgate.lineage import load_catalog
-from sqlgate.preflight import run_preflight
-from sqlgate.providers.replay import RecordingStore, ReplayProvider
-from sqlgate.runner import Runner, validate_cases
-from sqlgate.verdict import Verdict
+from querywarden.cli import app
+from querywarden.config import ConfigError, load_cases, load_policy
+from querywarden.executor import Executor, Status
+from querywarden.lineage import load_catalog
+from querywarden.preflight import run_preflight
+from querywarden.providers.replay import RecordingStore, ReplayProvider
+from querywarden.runner import Runner, validate_cases
+from querywarden.verdict import Verdict
 
 DEMO = Path(__file__).parents[2] / "examples" / "bookshop"
-CONFIG = DEMO / "sqlgate"
+CONFIG = DEMO / "querywarden"
 
 # Worked out by hand from 02_seed.sql, independently of the gold queries.
 HAND_CHECKED = {
@@ -54,14 +54,14 @@ EXPECTED_FAILURES = {
 
 @pytest.fixture(scope="module")
 def reader_url():
-    image = os.environ.get("SQLGATE_PG_IMAGE", "postgres:17-alpine")
+    image = os.environ.get("QUERYWARDEN_PG_IMAGE", "postgres:17-alpine")
     with PostgresContainer(image, username="admin", password="admin", dbname="bookshop", driver=None) as pg:
         host, port = pg.get_container_host_ip(), pg.get_exposed_port(5432)
         admin = conninfo.make_conninfo(host=host, port=port, dbname="bookshop", user="admin", password="admin")
         with psycopg.connect(admin, autocommit=True) as conn:
             for script in sorted((DEMO / "db").glob("*.sql")):
                 conn.execute(script.read_text(encoding="utf-8"))
-        yield conninfo.make_conninfo(admin, user="sqlgate_reader", password="demo-only")
+        yield conninfo.make_conninfo(admin, user="querywarden_reader", password="demo-only")
 
 
 @pytest.fixture(scope="module")
@@ -128,8 +128,8 @@ def test_rewrites_count_as_correct(executor, catalog, policy, cases):
 
 # Command line
 def invoke(monkeypatch, reader_url, *args):
-    monkeypatch.setenv("SQLGATE_DATABASE_URL", reader_url)
-    return CliRunner().invoke(app, [*args, "--config", str(CONFIG / "sqlgate.yaml")])
+    monkeypatch.setenv("QUERYWARDEN_DATABASE_URL", reader_url)
+    return CliRunner().invoke(app, [*args, "--config", str(CONFIG / "querywarden.yaml")])
 
 
 def test_cli_validate_passes(monkeypatch, reader_url):
@@ -150,7 +150,7 @@ def test_cli_writes_reports_that_work_as_a_baseline(monkeypatch, reader_url, tmp
     report_path, markdown_path = tmp_path / "report.json", tmp_path / "report.md"
     first = invoke(monkeypatch, reader_url, "run", "--json-out", str(report_path), "--markdown-out", str(markdown_path))
     assert first.exit_code == 1, first.output
-    assert markdown_path.read_text().startswith("# sqlgate: FAILED")
+    assert markdown_path.read_text().startswith("# querywarden: FAILED")
     report = json.loads(report_path.read_text())
     assert report["summary"]["evaluated"] == 40
     assert report["summary"]["safety_failures"] == 3
@@ -164,14 +164,14 @@ def test_cli_writes_reports_that_work_as_a_baseline(monkeypatch, reader_url, tmp
 
 
 def test_cli_passes_when_the_safety_cases_are_clean(monkeypatch, reader_url, tmp_path):
-    config = tmp_path / "sqlgate.yaml"
+    config = tmp_path / "querywarden.yaml"
     cases = yaml.safe_load((CONFIG / "cases.yaml").read_text())
     cases["cases"] = [c for c in cases["cases"] if c["id"] not in EXPECTED_FAILURES]
     (tmp_path / "cases.yaml").write_text(yaml.safe_dump(cases))
     (tmp_path / "policy.yaml").write_text((CONFIG / "policy.yaml").read_text())
     (tmp_path / "recordings.jsonl").write_text((CONFIG / "recordings.jsonl").read_text())
-    config.write_text((CONFIG / "sqlgate.yaml").read_text())
-    monkeypatch.setenv("SQLGATE_DATABASE_URL", reader_url)
+    config.write_text((CONFIG / "querywarden.yaml").read_text())
+    monkeypatch.setenv("QUERYWARDEN_DATABASE_URL", reader_url)
     result = CliRunner().invoke(app, ["run", "--config", str(config)])
     assert result.exit_code == 0, result.output
     assert "PASSED" in result.output
@@ -184,21 +184,21 @@ def test_cli_exit_2_on_bad_baseline(monkeypatch, reader_url, tmp_path):
 
 
 def test_cli_exit_2_without_database_url(monkeypatch):
-    monkeypatch.delenv("SQLGATE_DATABASE_URL", raising=False)
-    result = CliRunner().invoke(app, ["run", "--config", str(CONFIG / "sqlgate.yaml")])
+    monkeypatch.delenv("QUERYWARDEN_DATABASE_URL", raising=False)
+    result = CliRunner().invoke(app, ["run", "--config", str(CONFIG / "querywarden.yaml")])
     assert result.exit_code == 2
 
 
 def test_cli_exit_2_on_unsafe_role(monkeypatch, reader_url):
     admin = conninfo.make_conninfo(reader_url, user="admin", password="admin")
-    monkeypatch.setenv("SQLGATE_DATABASE_URL", admin)
-    result = CliRunner().invoke(app, ["run", "--config", str(CONFIG / "sqlgate.yaml")])
+    monkeypatch.setenv("QUERYWARDEN_DATABASE_URL", admin)
+    result = CliRunner().invoke(app, ["run", "--config", str(CONFIG / "querywarden.yaml")])
     assert result.exit_code == 2
     assert "superuser" in result.output
 
 
 def test_cli_exit_2_on_missing_config():
-    assert CliRunner().invoke(app, ["run", "--config", "/nonexistent/sqlgate.yaml"]).exit_code == 2
+    assert CliRunner().invoke(app, ["run", "--config", "/nonexistent/querywarden.yaml"]).exit_code == 2
 
 
 def test_missing_cases_file_is_a_config_error(tmp_path):

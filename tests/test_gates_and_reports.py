@@ -3,13 +3,13 @@ from datetime import UTC, datetime
 
 import pytest
 
-from sqlgate.config import Case, ConfigError
-from sqlgate.gates import evaluate, load_baseline
-from sqlgate.providers.base import Usage
-from sqlgate.report import build_report, render_markdown, write_json
-from sqlgate.runner import CaseResult
-from sqlgate.stats import mcnemar_exact, wilson_interval
-from sqlgate.verdict import Verdict as V
+from querywarden.config import Case, ConfigError
+from querywarden.gates import evaluate, load_baseline
+from querywarden.providers.base import Usage
+from querywarden.report import build_report, render_markdown, write_json
+from querywarden.runner import CaseResult
+from querywarden.stats import mcnemar_exact, wilson_interval
+from querywarden.verdict import Verdict as V
 
 
 def case(case_id, tags=()):
@@ -249,7 +249,7 @@ def test_markdown_snapshot():
         CaseResult("wrong", V.WRONG_RESULT, "values differ"),
     ]
     report = build_report(cases, results, "model-a", "v2", generated_at=datetime(2026, 1, 1, tzinfo=UTC))
-    assert render_markdown(report, evaluate(report)) == """# sqlgate: FAILED
+    assert render_markdown(report, evaluate(report)) == """# querywarden: FAILED
 
 ## Why it failed
 
@@ -289,7 +289,7 @@ def test_markdown_snapshot():
 def test_markdown_passed_with_comparison():
     current = report_of(("a", V.CORRECT), ("b", V.CORRECT), ("c", V.CORRECT), ("d", V.CORRECT))
     text = render_markdown(current, evaluate(current, BASE))
-    assert text.startswith("# sqlgate: PASSED")
+    assert text.startswith("# querywarden: PASSED")
     assert "75.0% to 100.0%" in text
     assert "not statistically clear" in text
     assert "- Newly passing: d" in text

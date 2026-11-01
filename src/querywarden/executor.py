@@ -7,7 +7,7 @@ from typing import Any
 import psycopg
 from psycopg import conninfo
 
-from sqlgate.statement import Check, check_statement
+from querywarden.statement import Check, check_statement
 
 _BATCH_ROWS = 100
 _DENIED = {"42501", "25006"}  # insufficient_privilege, read_only_sql_transaction
@@ -63,7 +63,7 @@ class Executor:
             dsn,
             options=options,
             connect_timeout=limits.connect_timeout_s,
-            application_name="sqlgate",
+            application_name="querywarden",
         )
 
     def execute(self, sql: str) -> ExecutionResult:
@@ -84,7 +84,7 @@ class Executor:
 
         try:
             conn.read_only = True
-            with conn.cursor(name="sqlgate") as cur:
+            with conn.cursor(name="querywarden") as cur:
                 cur.execute(sql)
                 result = self._fetch(cur)
             conn.rollback()

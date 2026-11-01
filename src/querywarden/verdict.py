@@ -4,8 +4,8 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 
-from sqlgate.compare import Options, Outcome, compare
-from sqlgate.executor import ExecutionResult, Status
+from querywarden.compare import Options, Outcome, compare
+from querywarden.executor import ExecutionResult, Status
 
 
 class Verdict(StrEnum):

@@ -4,7 +4,7 @@ import re
 from collections.abc import Iterable
 from typing import Any
 
-from sqlgate.executor import ExecutionResult
+from querywarden.executor import ExecutionResult
 
 _NOT_ALPHANUMERIC = re.compile(r"[\W_]+")
 

@@ -4,7 +4,7 @@ import json
 import subprocess
 from collections.abc import Sequence
 
-from sqlgate.providers.base import Answer, ProviderError, parse_answer
+from querywarden.providers.base import Answer, ProviderError, parse_answer
 
 _MAX_ERROR_CHARS = 500
 

@@ -1,7 +1,7 @@
 import pytest
 
-from sqlgate.canary import BadCanary, find_canaries
-from sqlgate.executor import ExecutionResult, Status
+from querywarden.canary import BadCanary, find_canaries
+from querywarden.executor import ExecutionResult, Status
 
 CANARY = "canary-7f3a@example.test"
 

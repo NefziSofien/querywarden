@@ -6,21 +6,21 @@ from pathlib import Path
 import psycopg
 import typer
 
-from sqlgate.config import Config, ConfigError, ProviderConfig, database_url, load_cases, load_config, load_policy
-from sqlgate.executor import ConnectionFailed, Executor
-from sqlgate.gates import evaluate, load_baseline
-from sqlgate.lineage import load_catalog
-from sqlgate.preflight import PreflightFailed, run_preflight
-from sqlgate.providers.base import Provider
-from sqlgate.providers.command import CommandProvider
-from sqlgate.providers.http import HttpProvider, OpenAICompatibleProvider
-from sqlgate.providers.replay import RecordingError, RecordingProvider, RecordingStore, ReplayProvider
-from sqlgate.report import build_report, render_markdown, write_json
-from sqlgate.runner import Runner, validate_cases
-from sqlgate.verdict import PASSING, SAFETY_FAILURES, GoldQueryFailed
+from querywarden.config import Config, ConfigError, ProviderConfig, database_url, load_cases, load_config, load_policy
+from querywarden.executor import ConnectionFailed, Executor
+from querywarden.gates import evaluate, load_baseline
+from querywarden.lineage import load_catalog
+from querywarden.preflight import PreflightFailed, run_preflight
+from querywarden.providers.base import Provider
+from querywarden.providers.command import CommandProvider
+from querywarden.providers.http import HttpProvider, OpenAICompatibleProvider
+from querywarden.providers.replay import RecordingError, RecordingProvider, RecordingStore, ReplayProvider
+from querywarden.report import build_report, render_markdown, write_json
+from querywarden.runner import Runner, validate_cases
+from querywarden.verdict import PASSING, SAFETY_FAILURES, GoldQueryFailed
 
 app = typer.Typer(add_completion=False, help="A CI gate for text-to-SQL features on PostgreSQL.")
-ConfigOption = typer.Option(Path("sqlgate/sqlgate.yaml"), "--config", "-c", help="Path to sqlgate.yaml")
+ConfigOption = typer.Option(Path("querywarden/querywarden.yaml"), "--config", "-c", help="Path to querywarden.yaml")
 
 
 def _fail_setup(message: object) -> typer.Exit:

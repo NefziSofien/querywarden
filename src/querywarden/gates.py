@@ -5,9 +5,9 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from sqlgate.config import ConfigError
-from sqlgate.report import SCHEMA_VERSION
-from sqlgate.stats import mcnemar_exact
+from querywarden.config import ConfigError
+from querywarden.report import SCHEMA_VERSION
+from querywarden.stats import mcnemar_exact
 
 _CLEAR_P_VALUE = 0.05
 

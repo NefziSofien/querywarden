@@ -1,6 +1,6 @@
 import pytest
 
-from sqlgate.statement import Check, check_statement
+from querywarden.statement import Check, check_statement
 
 
 @pytest.mark.parametrize(
