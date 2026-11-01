@@ -1,10 +1,37 @@
 # querywarden
 
-A CI gate for text-to-SQL features on PostgreSQL. Work in progress: the GitHub Action and a package release are not done yet.
+A CI gate for text-to-SQL features on PostgreSQL. A prompt or model change can return wrong numbers, expose forbidden data or attempt a dangerous statement without any visible error. querywarden asks your questions, runs the generated SQL on a test database with a limited role, compares the results with trusted queries, and fails the build.
+
+- **It compares results, not SQL text**, so a different query with the same answer still passes.
+- **Safety and accuracy stay separate**, so a high average cannot hide a data leak.
+
+See it block a real pull request in [querywarden-example](https://github.com/NefziSofien/querywarden-example/pull/1). That example and the demo below use hand-written answers. No results from a real model have been published yet.
+
+Status: early, version 0.1.0.
+
+## Install
+
+```bash
+pip install querywarden-cli
+```
+
+The package is named `querywarden-cli`, because PyPI refuses a name this close to the unrelated `query-warden` project. The command and the import are both `querywarden`. Python 3.12 or later is required.
+
+## Use it in GitHub Actions
+
+```yaml
+- run: docker compose up -d --wait # your test database
+- uses: NefziSofien/querywarden@v0.1.0
+  with:
+    baseline: querywarden/baseline.json
+    comment-on-pr: "true"
+```
+
+The job fails when a gate fails, and the report goes to the job summary. See [docs/github-action.md](docs/github-action.md) for the inputs, outputs and a full workflow. Reports contain the generated SQL and error messages, so think before turning on PR comments in a public repository.
 
 ## Try the demo
 
-The demo needs Docker and uv, and no API key. It replays hand-written answers against a small invented bookshop, with failures planted on purpose. Those answers are not the output of any model, so the result says nothing about model quality.
+From a clone of this repository, the demo needs Docker and uv, and no API key. It replays hand-written answers against a small invented bookshop, with failures planted on purpose. Those answers are not the output of any model, so the result says nothing about model quality.
 
 ```bash
 docker compose -f examples/bookshop/compose.yaml up -d --wait
@@ -41,6 +68,6 @@ QUERYWARDEN_PG_IMAGE=postgres:16-alpine uv run pytest
 - The privacy checks catch direct uses of forbidden columns, including through views, and planted values in results. They do not judge what could be inferred from aggregates, and SQL that cannot be analyzed is reported as unknown, not as safe.
 - Do not point this tool at a production database.
 
-## GitHub Action
+## License
 
-See [docs/github-action.md](docs/github-action.md) for the inputs, outputs and a workflow example.
+MIT
