@@ -3,7 +3,7 @@ from decimal import Decimal
 
 import pytest
 
-from querywarden.compare import Options, Outcome, compare
+from querywarden.compare import Options, Outcome, compare, diff_rows, project_columns
 from querywarden.executor import ExecutionResult, Status
 
 MATCH, SHAPE, WRONG = Outcome.MATCH, Outcome.WRONG_SHAPE, Outcome.WRONG_RESULT
@@ -118,3 +118,31 @@ def test_rows_separated_by_sorting_still_match():
 def test_large_result_is_fast_enough():
     rows = [[i, f"name-{i}", i * 0.5] for i in range(10_000)]
     assert compare(result("abc", rows), result("abc", list(reversed(rows)))).outcome is MATCH
+
+
+# Result diff for review
+@pytest.mark.parametrize(
+    ("gold", "candidate", "options", "only_gold", "only_candidate"),
+    [
+        ([(1,), (1,), (2,)], [(1,), (2,), (2,)], {}, [(1,)], [(2,)]),
+        ([(1,), (2,)], [(2,), (1,)], {}, [], []),
+        ([(1,), (2,)], [(2,), (1,)], {"ordered": True}, [(1,), (2,)], [(2,), (1,)]),
+        ([(1,), (2,), (3,)], [(1,)], {"ordered": True}, [(2,), (3,)], []),
+        ([(0.1 + 0.2,)], [(0.3,)], {}, [], []),
+        ([(1.0,)], [(1.1,)], {}, [(1.0,)], [(1.1,)]),
+        ([(None,)], [(0,)], {}, [(None,)], [(0,)]),
+    ],
+)
+def test_diff_rows_follows_the_comparison_rules(gold, candidate, options, only_gold, only_candidate):
+    assert diff_rows(gold, candidate, Options(**options)) == (only_gold, only_candidate)
+
+
+def test_project_columns_reorders_to_the_gold_columns():
+    gold, candidate = result("ab", [[1, "x"]]), result("ba", [["y", 1]])
+    assert project_columns(gold, candidate) == [(1, "y")]
+
+
+def test_project_columns_refuses_unpaired_shapes():
+    assert project_columns(result("ab", [[1, 2]]), result("a", [[1]])) is None
+    assert project_columns(result("a", [[1]]), result("ab", [[1, 2]])) is None
+    assert project_columns(result("a", [[1]]), result("ba", [[2, 1]]), Options(allow_extra_columns=True)) == [(1,)]
