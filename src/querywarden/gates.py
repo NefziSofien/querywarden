@@ -89,7 +89,7 @@ def evaluate(
     if baseline is None:
         warnings.append("no baseline given, so accuracy was reported but not gated")
     else:
-        comparison = _compare(evaluated, baseline)
+        comparison = _compare(cases, evaluated, baseline)
         failures += _accuracy_failures(comparison, allowed_drop, strict)
         if comparison.removed:
             message = f"cases in the baseline but not in this run: {', '.join(comparison.removed)}"
@@ -97,9 +97,11 @@ def evaluate(
     return GateResult(failures, warnings, comparison)
 
 
-def _compare(evaluated: list[dict], baseline: dict[str, Any]) -> Comparison:
+def _compare(cases: list[dict], evaluated: list[dict], baseline: dict[str, Any]) -> Comparison:
     before = {c["id"]: c for c in baseline["cases"] if not c.get("disputed")}
     now = {c["id"]: c for c in evaluated}
+    # A case disputed since the baseline is still in the run, and is already reported as disputed.
+    in_run = {c["id"] for c in cases}
     shared = sorted(before.keys() & now.keys())
     regressed = [i for i in shared if before[i]["passed"] and not now[i]["passed"]]
     improved = [i for i in shared if now[i]["passed"] and not before[i]["passed"]]
@@ -112,7 +114,7 @@ def _compare(evaluated: list[dict], baseline: dict[str, Any]) -> Comparison:
         regressed,
         improved,
         sorted(now.keys() - before.keys()),
-        sorted(before.keys() - now.keys()),
+        sorted(before.keys() - in_run),
         mcnemar_exact(len(regressed), len(improved)),
     )
 
