@@ -154,10 +154,16 @@ def render_markdown(report: dict[str, Any], gate: GateResult) -> str:
         f"- Provider: {_cell(provider['id'])}, prompt version {_cell(provider['prompt_version'])}",
         f"- Date: {report['generated_at']}, repeats: {report['repeats']}",
         f"- Time waiting for answers: {summary['latency_s']:.1f}s",
-        f"- Tokens: {_usage(summary['input_tokens'])} in, {_usage(summary['output_tokens'])} out,"
+        f"- Tokens: {_tokens(summary['input_tokens'], summary['output_tokens'])},"
         f" cost: {'not reported' if summary['cost_usd'] is None else f'${summary['cost_usd']:.4f}'}",
     ]
     return "\n".join(lines) + "\n"
+
+
+def _tokens(input_tokens: int | None, output_tokens: int | None) -> str:
+    if input_tokens is None and output_tokens is None:
+        return "not reported"
+    return f"{_usage(input_tokens)} in, {_usage(output_tokens)} out"
 
 
 def _usage(value: int | float | None) -> str:

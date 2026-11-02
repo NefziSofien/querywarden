@@ -16,8 +16,8 @@ jobs:
       matrix:
         postgres: ["16", "17"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
       - run: uv sync --python 3.12
       - run: uv run pytest -q
         env:
@@ -28,7 +28,7 @@ jobs:
     env:
       QUERYWARDEN_DATABASE_URL: postgresql://querywarden_reader:demo-only@127.0.0.1:55432/bookshop
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: docker compose -f examples/bookshop/compose.yaml up -d --wait
       # The demo's recordings contain planted failures, so the gate must block this run.
       - id: demo
