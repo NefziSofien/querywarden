@@ -107,7 +107,7 @@ The second run surfaced two more things:
 
 ## Try it
 
-querywarden is MIT licensed and at version 0.1.0. Install it with:
+querywarden is MIT licensed and at version 0.2.0. Install it with:
 
 ```bash
 pip install querywarden-cli
