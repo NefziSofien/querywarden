@@ -298,6 +298,12 @@ def test_markdown_passed_with_comparison():
     assert "- Newly passing: d" in text
 
 
+def test_markdown_unreported_usage_is_said_once():
+    current = report_of(("a", V.CORRECT))
+    text = render_markdown(current, evaluate(current))
+    assert "- Tokens: not reported, cost: not reported" in text
+
+
 def test_hostile_text_cannot_break_out_of_the_table():
     hostile = "x | y\n## Fake heading <img src=x onerror=alert(1)> `code`"
     report = build_report([case("a")], [CaseResult("a", V.EXECUTION_ERROR, hostile)], "m<b>", "v1")

@@ -14,7 +14,7 @@ jobs:
     env:
       QUERYWARDEN_DATABASE_URL: ${{ secrets.QUERYWARDEN_DATABASE_URL }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: docker compose up -d --wait # your test database
       - uses: NefziSofien/querywarden@v0.2.0
         with:

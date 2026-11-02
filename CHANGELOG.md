@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- The action uses `astral-sh/setup-uv@v7`, which runs on Node 24. Before, every run warned that Node 20 is deprecated.
+- The report says "Tokens: not reported" once when a provider reports no usage, instead of "not reported in, not reported out".
+
 ## 0.2.0 (2026-11-02)
 
 ### Added
