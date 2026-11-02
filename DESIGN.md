@@ -1,6 +1,6 @@
 # querywarden: design
 
-Status: draft v1, 2026-11-01. Milestones 1 (comparison and verdicts), 2 (safe executor and preflight), 3 (privacy checks), 4 (providers, record and replay), 5 (bookshop demo, with a basic CLI) and 6 (gates, baseline, statistics, reports) are built and tested on PostgreSQL 16 and 17.
+Status: v1, updated 2026-11-02. Milestones 1 (comparison and verdicts), 2 (safe executor and preflight), 3 (privacy checks), 4 (providers, record and replay), 5 (bookshop demo, with a basic CLI), 6 (gates, baseline, statistics, reports) and 7 (GitHub Action, PyPI v0.1.0 as `querywarden-cli`) are built and tested on PostgreSQL 16 and 17, and so are `validate`, `run` and `review`. Milestone 8 is in progress: two real runs with `openai/gpt-oss-120b` on Groq are recorded and described in the README, and the write-up is drafted but not yet published.
 
 **One line:** a CI gate for text-to-SQL features. It runs your system against your own PostgreSQL schema and fails the build if accuracy regresses or a query breaks a safety rule.
 
