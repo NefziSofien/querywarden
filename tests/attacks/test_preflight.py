@@ -1,9 +1,19 @@
 """Each unsafe setup must stop the run with a specific finding."""
 
+from types import SimpleNamespace
+
 import psycopg
 import pytest
+from psycopg import conninfo
 
-from querywarden.preflight import PreflightFailed, check_target, is_local_host, run_preflight
+from querywarden.preflight import (
+    PreflightFailed,
+    check_connection,
+    check_target,
+    is_connected_locally,
+    is_local_host,
+    run_preflight,
+)
 
 FORBIDDEN = ["public.customers.email", "public.customers"]
 
@@ -99,3 +109,37 @@ def test_remote_host_is_refused_unless_allowed():
     dsn = "host=db.example.com dbname=x"
     assert [f.code for f in check_target(dsn)] == ["remote_host"]
     assert check_target(dsn, allow_remote=True) == []
+
+
+def test_remote_hostaddr_behind_a_local_name_is_refused():
+    dsn = "host=localhost hostaddr=203.0.113.5 dbname=x"
+    assert [f.code for f in check_target(dsn)] == ["remote_host"]
+    assert check_target("host=localhost hostaddr=127.0.0.1 dbname=x") == []
+
+
+@pytest.mark.parametrize(
+    "host,hostaddr,local",
+    [
+        ("localhost", "127.0.0.1", True),
+        ("localhost", "::1", True),
+        ("/var/run/postgresql", "", True),
+        ("postgres", "172.18.0.2", True),
+        ("localhost", "203.0.113.5", False),
+        ("127.0.0.1", "203.0.113.5", False),
+        # What PGHOST or a service file can bring in when the URL names no host.
+        ("db.example.com", "203.0.113.5", False),
+    ],
+)
+def test_the_server_actually_reached_is_checked(host, hostaddr, local):
+    conn = SimpleNamespace(info=SimpleNamespace(host=host, hostaddr=hostaddr))
+    assert is_connected_locally(host, hostaddr) is local
+    assert (check_connection(conn) == []) is local
+    assert check_connection(conn, allow_remote=True) == []
+
+
+def test_host_from_the_environment_is_checked_after_connecting(db, monkeypatch):
+    # The URL names no host, so only the connection shows where libpq went.
+    params = conninfo.conninfo_to_dict(db.reader_dsn)
+    monkeypatch.setenv("PGHOST", params.pop("host"))
+    with psycopg.connect(conninfo.make_conninfo(**params), autocommit=True) as conn:
+        assert check_connection(conn) == []

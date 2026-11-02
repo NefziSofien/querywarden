@@ -93,6 +93,22 @@ def test_denied_access_is_reported_as_blocked(executor):
     assert result.sqlstate == "42501"
 
 
+@pytest.mark.parametrize(
+    "sql,status",
+    [
+        ("SELECT contact::int FROM reporting.customer_contacts", Status.ERROR),
+        ("SELECT contact::regclass FROM reporting.customer_contacts", Status.UNKNOWN_SCHEMA),
+        ("SELECT contact::date FROM reporting.customer_contacts", Status.ERROR),
+    ],
+)
+def test_error_detail_never_quotes_a_value(executor, sql, status):
+    # The server message would read: invalid input syntax for type integer: "canary-7f3a@example.test"
+    result = executor.execute(sql)
+    assert result.status is status
+    assert "canary" not in result.detail and "@" not in result.detail
+    assert result.sqlstate in result.detail
+
+
 def test_session_state_does_not_survive_a_query(executor):
     assert executor.execute("SELECT set_config('statement_timeout', '0', false)").status is Status.OK
     assert executor.execute("SHOW statement_timeout").status is Status.BLOCKED

@@ -7,6 +7,11 @@
 - The action uses `astral-sh/setup-uv@v7`, which runs on Node 24. Before, every run warned that Node 20 is deprecated.
 - The report says "Tokens: not reported" once when a provider reports no usage, instead of "not reported in, not reported out".
 
+### Security
+
+- The remote-database check also looks at the server the connection actually reached. Before, a `hostaddr`, a `PGHOST` variable or a service file could point a URL that looked local at a remote server.
+- A failed query is reported by its error class and SQLSTATE, never by the server's message. Some messages quote a value the query read, such as `invalid input syntax for type integer: "ada@example.test"`, so a model query could put a row value, canaries included, into the report and the PR comment.
+
 ## 0.2.0 (2026-11-02)
 
 ### Added
