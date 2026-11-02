@@ -197,9 +197,12 @@ def test_adding_easy_cases_cannot_hide_a_regression():
 
 def test_disputing_a_case_removes_it_from_both_sides():
     current = report_of(("a", V.DISPUTED), ("b", V.CORRECT), ("c", V.CORRECT), ("d", V.WRONG_RESULT))
-    comparison = evaluate(current, BASE).comparison
-    assert comparison.shared == 3
-    assert comparison.removed == ["a"]
+    result = evaluate(current, BASE, strict=True)
+    assert result.comparison.shared == 3
+    # Still in the run, so it is reported as disputed, not as removed.
+    assert result.comparison.removed == []
+    assert not any("not in this run" in m for m in result.failures + result.warnings)
+    assert any("disputed: a" in w for w in result.warnings)
 
 
 def test_no_shared_cases_fails():
