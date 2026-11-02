@@ -6,8 +6,10 @@ from pathlib import Path
 import psycopg
 import typer
 
+from querywarden.canary import find_canaries
+from querywarden.compare import diff_rows, project_columns
 from querywarden.config import Config, ConfigError, ProviderConfig, database_url, load_cases, load_config, load_policy
-from querywarden.executor import ConnectionFailed, Executor
+from querywarden.executor import ConnectionFailed, Executor, Status
 from querywarden.gates import evaluate, load_baseline
 from querywarden.lineage import load_catalog
 from querywarden.preflight import PreflightFailed, run_preflight
@@ -137,6 +139,92 @@ def run(
     typer.echo("PASSED" if gate.passed else "FAILED")
     if not gate.passed:
         raise typer.Exit(1)
+
+
+@app.command()
+def review(
+    case_id: str = typer.Argument(help="The id of the case to review."),
+    config_path: Path = ConfigOption,
+    max_rows: int = typer.Option(20, min=1, help="Print at most this many rows per side."),
+) -> None:
+    """Show one case: gold and model SQL, the verdict and a result diff."""
+    try:
+        config, base, policy, cases, executor, catalog = _prepare(config_path)
+        case = next((c for c in cases if c.id == case_id), None)
+        if case is None:
+            raise ConfigError(f"no case with id {case_id}")
+        runner = Runner(executor, catalog, policy, _build_provider(config, base, record=False))
+        # run skips a disputed case, but review is where the dispute gets settled, so judge it anyway.
+        result = runner.run_case(case.model_copy(update={"disputed": None}))
+        gold = executor.execute(case.gold) if case.gold else None
+    except (ConfigError, PreflightFailed, ConnectionFailed, GoldQueryFailed, RecordingError, OSError, psycopg.OperationalError) as e:
+        raise _fail_setup(e) from e
+
+    typer.echo(f"case: {case.id}")
+    typer.echo(f"question: {case.question}")
+    if case.tags:
+        typer.echo(f"tags: {', '.join(case.tags)}")
+    if case.disputed:
+        typer.echo(f"disputed: {case.disputed} (run leaves this case out of accuracy)")
+    typer.echo("\ngold SQL:" if case.gold else "\ngold: none, this case expects a refusal")
+    if case.gold:
+        typer.echo(_indent(case.gold))
+    typer.echo("\nmodel SQL:" if result.sql else "\nmodel answer: no SQL")
+    if result.sql:
+        typer.echo(_indent(result.sql))
+    safety = "SAFETY " if result.verdict in SAFETY_FAILURES else ""
+    typer.echo(f"\nverdict: {safety}{result.verdict}" + (f": {result.detail}" if result.detail else ""))
+
+    if result.verdict in SAFETY_FAILURES:
+        typer.echo("rows withheld: the model query is a safety failure")
+    elif gold is not None and result.sql:
+        _print_diff(executor, policy.canaries, case, gold, result, max_rows)
+    if result.verdict not in PASSING:
+        raise typer.Exit(1)
+
+
+def _print_diff(executor: Executor, canaries, case, gold, result, max_rows: int) -> None:
+    """Rows are shown only when nothing suggests they hold data the policy protects."""
+    if result.lineage_unknown:
+        typer.echo("rows withheld: the columns the model query reads could not all be traced")
+        return
+    model = executor.execute(result.sql)
+    if model.status is not Status.OK:
+        return
+    if find_canaries(model, canaries) or find_canaries(gold, canaries):
+        typer.echo("rows withheld: the result contains a canary value")
+        return
+
+    typer.echo(
+        f"\nshape: gold {len(gold.rows)} rows x {len(gold.columns)} columns,"
+        f" model {len(model.rows)} rows x {len(model.columns)} columns"
+    )
+    if gold.truncated or model.truncated:
+        typer.echo("a result was truncated, so the diff is incomplete")
+    projected = project_columns(gold, model, case.options)
+    if projected is None:
+        typer.echo("the columns cannot be paired, so every row of each side is listed")
+        only_gold, only_model, model_columns = gold.rows, model.rows, model.columns
+    else:
+        only_gold, only_model = diff_rows(gold.rows, projected, case.options)
+        model_columns = gold.columns
+    _print_rows("only in gold", gold.columns, only_gold, max_rows)
+    _print_rows("only in model", model_columns, only_model, max_rows)
+
+
+def _print_rows(title: str, columns, rows, max_rows: int) -> None:
+    typer.echo(f"\n{title}: {len(rows)} rows")
+    if not rows:
+        return
+    typer.echo(_indent(" | ".join(columns)))
+    for row in rows[:max_rows]:
+        typer.echo(_indent(" | ".join("NULL" if v is None else str(v) for v in row)))
+    if len(rows) > max_rows:
+        typer.echo(f"  ... {len(rows) - max_rows} more rows not shown")
+
+
+def _indent(text: str) -> str:
+    return "\n".join(f"  {line}" for line in text.strip().splitlines())
 
 
 if __name__ == "__main__":

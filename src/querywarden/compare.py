@@ -56,6 +56,65 @@ def compare(gold: ExecutionResult, candidate: ExecutionResult, options: Options 
     return Comparison(Outcome.MATCH)
 
 
+def project_columns(gold: ExecutionResult, candidate: ExecutionResult, options: Options = Options()) -> list | None:
+    """The candidate rows in the gold column order, or None when the shapes cannot be paired."""
+    gold_width, candidate_width = len(gold.columns), len(candidate.columns)
+    if candidate_width < gold_width or (candidate_width > gold_width and not options.allow_extra_columns):
+        return None
+    chosen = _align_columns(gold, candidate, options) if len(gold.rows) == len(candidate.rows) else None
+    if chosen is None:
+        # No alignment makes the values match, so pair same-named columns, then the rest in order.
+        named: list[int | None] = []
+        for name in gold.columns:
+            named.append(next((j for j, c in enumerate(candidate.columns) if c == name and j not in named), None))
+        free = iter([j for j in range(candidate_width) if j not in named])
+        chosen = [j if j is not None else next(free) for j in named]
+    return [tuple(row[j] for j in chosen) for row in candidate.rows]
+
+
+def diff_rows(gold: Rows, candidate: Rows, options: Options = Options()) -> tuple[list, list]:
+    """Rows only in the gold result and rows only in the candidate, under the same rules as compare.
+
+    Both sides must already have the gold column order and width.
+    """
+    width = len(gold[0]) if gold else len(candidate[0]) if candidate else 0
+    approximate = {
+        i for i in range(width) if any(isinstance(row[i], float) for rows in (gold, candidate) for row in rows)
+    }
+    tolerance = options.float_tolerance
+    if options.ordered:
+        pairs = list(zip(gold, candidate))
+        differ = [(g, c) for g, c in pairs if not _row_close(g, c, approximate, tolerance)]
+        tail_gold, tail_candidate = list(gold[len(pairs) :]), list(candidate[len(pairs) :])
+        return [g for g, _ in differ] + tail_gold, [c for _, c in differ] + tail_candidate
+    if not approximate:
+        remaining = Counter(_exact_key(row, ()) for row in candidate)
+        only_gold = []
+        for row in gold:
+            key = _exact_key(row, ())
+            if remaining[key]:
+                remaining[key] -= 1
+            else:
+                only_gold.append(row)
+        only_candidate = []
+        for row in candidate:
+            key = _exact_key(row, ())
+            if remaining[key]:
+                remaining[key] -= 1
+                only_candidate.append(row)
+        return only_gold, only_candidate
+
+    remaining_rows = list(candidate)
+    only_gold = []
+    for row in gold:
+        match = next((i for i, c in enumerate(remaining_rows) if _row_close(row, c, approximate, tolerance)), None)
+        if match is None:
+            only_gold.append(row)
+        else:
+            del remaining_rows[match]
+    return only_gold, remaining_rows
+
+
 def _align_columns(gold: ExecutionResult, candidate: ExecutionResult, options: Options) -> list[int] | None:
     """Find which candidate column stands for each gold column, since order and aliases are free."""
     width = len(gold.columns)

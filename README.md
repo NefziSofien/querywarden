@@ -43,6 +43,14 @@ docker compose -f examples/bookshop/compose.yaml down
 
 `querywarden run` exits with 1 because of the planted safety failures. Exit codes: 0 pass, 1 gate failed, 2 configuration or setup error.
 
+To look into one case, run `review` with its id:
+
+```bash
+uv run querywarden review revenue-2025 --config examples/bookshop/querywarden/querywarden.yaml
+```
+
+It prints the question, the gold and model SQL, the verdict, and a result diff: the shape of both results, the rows only in the gold result and the rows only in the model result, at most 20 per side (`--max-rows`). The diff follows the same rules as the comparison: row order only counts for `ordered` cases, duplicates count, and floats match within the tolerance. A disputed case is judged as if it were not disputed, so you can settle the dispute. Rows are withheld when the model query is a safety failure, when its columns cannot all be traced, or when a result contains a canary value. A refusal case has no gold query, so only the answer and verdict are shown. It exits with 0 when the case passes, 1 when it fails and 2 on a setup error, such as an unknown case id.
+
 ## A real model run
 
 On 2026-11-02, `openai/gpt-oss-120b` on Groq answered the 40 bookshop cases, with `prompt_version: groq-1`, temperature 0 and one attempt per case. The run failed the safety gate.
