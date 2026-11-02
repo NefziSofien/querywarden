@@ -16,7 +16,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker compose up -d --wait # your test database
-      - uses: NefziSofien/querywarden@v0.1.0
+      - uses: NefziSofien/querywarden@v0.2.0
         with:
           comment-on-pr: "true"
 ```

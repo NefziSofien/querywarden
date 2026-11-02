@@ -7,7 +7,7 @@ A CI gate for text-to-SQL features on PostgreSQL. A prompt or model change can r
 
 See it block a real pull request in [querywarden-example](https://github.com/NefziSofien/querywarden-example/pull/1). That example and the demo below use hand-written answers. For a real model, see [the real runs](#a-real-model-run) and the write-up, [A real model leaked customer emails through an approved view](docs/real-model-run.md).
 
-Status: early. Version 0.1.0 is on PyPI. The `review` command, `retry-after` handling for rate limits, and the fix for disputed cases under `--strict` are on `main` and not released yet.
+Status: early, version 0.2.0. See the [changelog](CHANGELOG.md).
 
 ## Install
 
@@ -15,11 +15,7 @@ Status: early. Version 0.1.0 is on PyPI. The `review` command, `retry-after` han
 pip install querywarden-cli
 ```
 
-The package is named `querywarden-cli`, because PyPI refuses a name this close to the unrelated `query-warden` project. The command and the import are both `querywarden`. Python 3.12 or later is required. To get the unreleased changes, install from `main`:
-
-```bash
-pip install git+https://github.com/NefziSofien/querywarden
-```
+The package is named `querywarden-cli`, because PyPI refuses a name this close to the unrelated `query-warden` project. The command and the import are both `querywarden`. Python 3.12 or later is required.
 
 ## Set it up on your schema
 
@@ -90,7 +86,7 @@ querywarden run --baseline querywarden/baseline.json # later runs are gated agai
 
 ```yaml
 - run: docker compose up -d --wait # your test database
-- uses: NefziSofien/querywarden@v0.1.0
+- uses: NefziSofien/querywarden@v0.2.0
   with:
     baseline: querywarden/baseline.json
     comment-on-pr: "true"
@@ -114,7 +110,7 @@ docker compose -f examples/bookshop/compose.yaml down
 
 ## Look into one case
 
-`review` is on `main`, not in 0.1.0 yet. Run it with a case id:
+Run `review` with a case id:
 
 ```bash
 uv run querywarden review revenue-2025 --config examples/bookshop/querywarden/querywarden.yaml
