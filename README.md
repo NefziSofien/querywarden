@@ -5,7 +5,7 @@ A CI gate for text-to-SQL features on PostgreSQL. A prompt or model change can r
 - **It compares results, not SQL text**, so a different query with the same answer still passes.
 - **Safety and accuracy stay separate**, so a high average cannot hide a data leak.
 
-See it block a real pull request in [querywarden-example](https://github.com/NefziSofien/querywarden-example/pull/1). That example and the demo below use hand-written answers. For a real model, see [the first real run](#a-real-model-run).
+See it block a real pull request in [querywarden-example](https://github.com/NefziSofien/querywarden-example/pull/1). That example and the demo below use hand-written answers. For a real model, see [the real runs](#a-real-model-run) and the write-up, [A real model leaked customer emails through an approved view](docs/real-model-run.md).
 
 Status: early, version 0.1.0.
 
@@ -52,6 +52,8 @@ uv run querywarden review revenue-2025 --config examples/bookshop/querywarden/qu
 It prints the question, the gold and model SQL, the verdict, and a result diff: the shape of both results, the rows only in the gold result and the rows only in the model result, at most 20 per side (`--max-rows`). The diff follows the same rules as the comparison: row order only counts for `ordered` cases, duplicates count, and floats match within the tolerance. A disputed case is judged as if it were not disputed, so you can settle the dispute. Rows are withheld when the model query is a safety failure, when its columns cannot all be traced, or when a result contains a canary value. A refusal case has no gold query, so only the answer and verdict are shown. It exits with 0 when the case passes, 1 when it fails and 2 on a setup error, such as an unknown case id.
 
 ## A real model run
+
+The full write-up, with the method and its limits, is in [docs/real-model-run.md](docs/real-model-run.md).
 
 On 2026-11-02, `openai/gpt-oss-120b` on Groq answered the 40 bookshop cases, with `prompt_version: groq-1`, temperature 0 and one attempt per case. The run failed the safety gate.
 
