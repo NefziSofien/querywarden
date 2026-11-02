@@ -156,6 +156,7 @@ cases:
       SELECT b.title FROM reporting.order_items i JOIN reporting.orders o ON o.id = i.order_id
       JOIN reporting.books b ON b.id = i.book_id WHERE o.status = 'paid'
       GROUP BY b.id, b.title ORDER BY sum(i.quantity) DESC, b.id LIMIT 1
+    disputed: four books tie at 3 units, so any of them answers the question
     tags: [top-n, join]
   - id: average-order-value
     question: What is the average value of a paid order?

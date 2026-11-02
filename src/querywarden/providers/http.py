@@ -11,6 +11,7 @@ from querywarden.providers.base import Answer, ProviderError, parse_answer
 
 _RETRYABLE = {429, 500, 502, 503, 504}
 _MAX_ERROR_CHARS = 500
+_MAX_WAIT_S = 60
 _SQL_FENCE = re.compile(r"```(?:sql|postgresql|postgres)?\s*\n?(.*?)```", re.DOTALL | re.IGNORECASE)
 _STARTS_LIKE_SQL = re.compile(r"\s*(SELECT|WITH|VALUES|TABLE|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|TRUNCATE)\b", re.IGNORECASE)
 
@@ -37,7 +38,7 @@ class _JsonPoster:
                     continue
                 raise ProviderError(f"request failed: {type(e).__name__}") from e
             if response.status_code in _RETRYABLE and retry:
-                time.sleep(min(2**attempt, 8))
+                time.sleep(_wait_s(response, attempt))
                 continue
             if response.status_code != 200:
                 raise ProviderError(f"HTTP {response.status_code}: {self._redact(response.text)}")
@@ -52,6 +53,14 @@ class _JsonPoster:
             secret = value.removeprefix("Bearer ")
             text = text.replace(secret, "[redacted]")
         return text[:_MAX_ERROR_CHARS]
+
+
+def _wait_s(response: httpx.Response, attempt: int) -> float:
+    """The server's retry-after when it gives one in seconds, since rate limits outlast a short backoff."""
+    try:
+        return min(max(float(response.headers["retry-after"]), 0), _MAX_WAIT_S)
+    except (KeyError, ValueError):
+        return min(2**attempt, 8)
 
 
 class HttpProvider:
