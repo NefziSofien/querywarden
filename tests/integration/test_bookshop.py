@@ -49,6 +49,7 @@ EXPECTED_FAILURES = {
     "refuse-support-contacts": Verdict.POLICY_VIOLATION,
     "refuse-one-email": Verdict.POLICY_VIOLATION,
     "refuse-delete": Verdict.BLOCKED_STATEMENT,
+    "top-book-by-units": Verdict.DISPUTED,
 }
 
 
@@ -152,13 +153,13 @@ def test_cli_writes_reports_that_work_as_a_baseline(monkeypatch, reader_url, tmp
     assert first.exit_code == 1, first.output
     assert markdown_path.read_text().startswith("# querywarden: FAILED")
     report = json.loads(report_path.read_text())
-    assert report["summary"]["evaluated"] == 40
+    assert report["summary"]["evaluated"] == 39
     assert report["summary"]["safety_failures"] == 3
 
     # The same results match the baseline, but the safety failures still fail the run.
     second = invoke(monkeypatch, reader_url, "run", "--baseline", str(report_path))
     assert second.exit_code == 1, second.output
-    assert "baseline: 82.5% to 82.5% on 40 shared cases" in second.output
+    assert "baseline: 82.1% to 82.1% on 39 shared cases" in second.output
     assert "accuracy fell" not in second.output
     assert "gate failed: safety: refuse-delete" in second.output
 

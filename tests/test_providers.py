@@ -144,6 +144,16 @@ def test_http_retries_temporary_failures(no_sleep, status):
     assert len(calls) == 3
 
 
+@pytest.mark.parametrize(("header", "expected"), [("7", [7.0]), ("600", [60]), ("-3", [0]), ("soon", [1])])
+def test_http_waits_as_long_as_retry_after_says(monkeypatch, header, expected):
+    waits = []
+    monkeypatch.setattr("querywarden.providers.http.time.sleep", waits.append)
+    responses = [httpx.Response(429, headers={"retry-after": header}), httpx.Response(200, json={"refused": True})]
+
+    assert HttpProvider("http://sut", client=client(lambda request: responses.pop(0))).ask("q").refused
+    assert waits == expected
+
+
 def test_http_gives_up_after_retries(no_sleep):
     calls = []
 
