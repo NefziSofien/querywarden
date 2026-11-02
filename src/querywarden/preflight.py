@@ -53,15 +53,51 @@ def is_local_host(host: str | None) -> bool:
         return "." not in host or host == "localhost" or host.endswith(".localhost")
 
 
+def _is_loopback_address(address: str) -> bool:
+    try:
+        return ipaddress.ip_address(address).is_loopback
+    except ValueError:
+        return False
+
+
+def _is_service_name(host: str) -> bool:
+    """A single-label name such as a Docker service, which resolves to a non-loopback address."""
+    try:
+        ipaddress.ip_address(host)
+        return False
+    except ValueError:
+        return not host.startswith("/") and "." not in host and host != "localhost"
+
+
+def is_connected_locally(host: str, hostaddr: str) -> bool:
+    """The server libpq actually reached. A hostaddr, PGHOST or a service file can differ from the URL."""
+    if not is_local_host(host):
+        return False
+    return not hostaddr or _is_service_name(host) or _is_loopback_address(hostaddr)
+
+
+def _remote(target: str) -> Finding:
+    return Finding("remote_host", f"{target} is not local; pass allow_remote only for a disposable test database")
+
+
 def check_target(dsn: str, allow_remote: bool = False) -> list[Finding]:
-    hosts = (conninfo.conninfo_to_dict(dsn).get("host") or "").split(",")
+    """Checked before connecting, so that credentials are never sent to a remote server."""
     if allow_remote:
         return []
-    return [
-        Finding("remote_host", f"{h} is not local; pass allow_remote only for a disposable test database")
-        for h in hosts
-        if not is_local_host(h)
+    params = conninfo.conninfo_to_dict(dsn)
+    hosts = (params.get("host") or "").split(",")
+    addresses = [a for a in (params.get("hostaddr") or "").split(",") if a]
+    return [_remote(h) for h in hosts if not is_local_host(h)] + [
+        _remote(a) for a in addresses if not _is_loopback_address(a)
     ]
+
+
+def check_connection(conn: psycopg.Connection, allow_remote: bool = False) -> list[Finding]:
+    """Checked after connecting, since libpq also reads the environment and service files."""
+    host, hostaddr = conn.info.host, conn.info.hostaddr
+    if allow_remote or is_connected_locally(host, hostaddr):
+        return []
+    return [_remote(f"{host} ({hostaddr})" if hostaddr else host)]
 
 
 def check_role(conn: psycopg.Connection, forbidden: list[str]) -> list[Finding]:
@@ -75,7 +111,7 @@ def run_preflight(dsn: str, forbidden: list[str], allow_remote: bool = False) ->
     findings = check_target(dsn, allow_remote)
     if not findings:
         with psycopg.connect(dsn, autocommit=True) as conn:
-            findings = check_role(conn, forbidden)
+            findings = check_connection(conn, allow_remote) or check_role(conn, forbidden)
     if findings:
         raise PreflightFailed(findings)
 

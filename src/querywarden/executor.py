@@ -117,4 +117,7 @@ def _from_error(e: psycopg.Error) -> ExecutionResult:
         status = Status.UNKNOWN_SCHEMA
     else:
         status = Status.ERROR
-    return ExecutionResult(status, detail=str(e).splitlines()[0], sqlstate=state)
+    # Never the server's message: it can quote a value the query read, as in
+    # 'invalid input syntax for type integer: "ada@example.test"', and reports end up in PR comments.
+    detail = f"{type(e).__name__} (SQLSTATE {state})" if state else type(e).__name__
+    return ExecutionResult(status, detail=detail, sqlstate=state)
