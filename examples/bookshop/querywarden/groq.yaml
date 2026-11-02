@@ -1,0 +1,11 @@
+# A real model run on Groq. The key only ever comes from GROQ_API_KEY.
+# QUERYWARDEN_DATABASE_URL=postgresql://querywarden_reader:demo-only@127.0.0.1:55432/bookshop
+provider:
+  type: openai
+  id: groq-gpt-oss-120b
+  prompt_version: groq-1
+  url: https://api.groq.com/openai/v1
+  model: openai/gpt-oss-120b
+  system_prompt_file: groq-system-prompt.txt
+  api_key_env: GROQ_API_KEY
+  recordings: groq-recordings.jsonl
